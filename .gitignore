@@ -28,6 +28,7 @@ coverage
 *.tsbuildinfo
 
 .eslintcache
+logs/ai-pipeline/
 
 # Cypress
 /cypress/videos/

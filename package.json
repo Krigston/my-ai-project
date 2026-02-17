@@ -17,7 +17,8 @@
     "mcp:figma": "node mcp/figma-server.js",
     "mcp:browser": "node mcp/browser-server.js",
     "mcp:build": "node mcp/build.js",
-    "mcp:vcs": "bash mcp/vcs.sh"
+    "mcp:vcs": "bash mcp/vcs.sh",
+    "logs:ai": "tail -n 200 -f logs/ai-pipeline/events.jsonl"
   },
   "dependencies": {
     "pinia": "^3.0.4",

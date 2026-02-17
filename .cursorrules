@@ -34,3 +34,5 @@
 
 ## Режим работы
 - Перед завершением задачи запускай `npm run lint`, `npm run type-check`, `npm run build`.
+- Для постановки задач используй `docs/ai/TASK_TEMPLATE.md`.
+- Критерий готовности задачи проверяй по `docs/ai/DONE_CRITERIA.md`.

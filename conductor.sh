@@ -4,6 +4,20 @@ set -euo pipefail
 COMMAND="${1:-}"
 FEATURE_NAME="${2:-}"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+LOG_DIR="${SCRIPT_DIR}/logs/ai-pipeline"
+LOG_FILE="${LOG_DIR}/conductor.jsonl"
+
+log_event() {
+  local event="$1"
+  local status="$2"
+  local details="${3:-}"
+  mkdir -p "$LOG_DIR"
+  printf '{"ts":"%s","source":"conductor","event":"%s","status":"%s","details":"%s"}\n' \
+    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+    "$event" \
+    "$status" \
+    "${details//\"/\'}" >>"$LOG_FILE"
+}
 
 usage() {
   echo "Использование: ./conductor.sh {start|finish} <feature-name>"
@@ -58,9 +72,12 @@ require_cmd npm
 ensure_git_repo
 BASE_BRANCH="$(resolve_base_branch)"
 FEATURE_BRANCH="feature/${FEATURE_NAME}"
+log_event "invoke" "started" "command=${COMMAND}, feature=${FEATURE_NAME}"
 
 case "$COMMAND" in
   start)
+    log_event "start" "started" "feature=${FEATURE_NAME}"
+
     if [ -z "$FEATURE_NAME" ]; then
       usage
       exit 1
@@ -68,17 +85,20 @@ case "$COMMAND" in
 
     WORKTREE_PATH="${SCRIPT_DIR}/../${FEATURE_NAME}-worktree"
     if [ -d "$WORKTREE_PATH" ]; then
+      log_event "start" "error" "worktree-exists=${WORKTREE_PATH}"
       echo "Worktree уже существует: $WORKTREE_PATH"
       exit 1
     fi
 
     if [ -n "$(git -C "$SCRIPT_DIR" status --porcelain)" ]; then
+      log_event "start" "error" "dirty-main-worktree"
       echo "Ошибка: есть незакоммиченные изменения в основном дереве."
       echo "Перед start закоммитьте или отложите изменения."
       exit 1
     fi
 
     if git -C "$SCRIPT_DIR" show-ref --verify --quiet "refs/heads/${FEATURE_BRANCH}"; then
+      log_event "start" "error" "feature-branch-exists=${FEATURE_BRANCH}"
       echo "Ошибка: локальная ветка ${FEATURE_BRANCH} уже существует."
       exit 1
     fi
@@ -111,9 +131,12 @@ case "$COMMAND" in
     fi
 
     echo "Worktree для фичи '${FEATURE_NAME}' создан: $WORKTREE_PATH"
+    log_event "start" "success" "feature=${FEATURE_NAME}, worktree=${WORKTREE_PATH}"
     ;;
 
   finish)
+    log_event "finish" "started" "feature=${FEATURE_NAME}"
+
     if [ -z "$FEATURE_NAME" ]; then
       usage
       exit 1
@@ -121,6 +144,7 @@ case "$COMMAND" in
 
     WORKTREE_PATH="${SCRIPT_DIR}/../${FEATURE_NAME}-worktree"
     if [ ! -d "$WORKTREE_PATH" ]; then
+      log_event "finish" "error" "worktree-missing=${WORKTREE_PATH}"
       echo "Worktree не найден: $WORKTREE_PATH"
       exit 1
     fi
@@ -130,6 +154,7 @@ case "$COMMAND" in
       activate_project_node
       npm install
       if [ -n "$(git status --porcelain)" ]; then
+        log_event "finish" "error" "dirty-feature-worktree"
         echo "Есть незакоммиченные изменения. Сначала закоммитьте их."
         exit 1
       fi
@@ -148,9 +173,11 @@ case "$COMMAND" in
     git -C "$SCRIPT_DIR" worktree remove "$WORKTREE_PATH"
     git -C "$SCRIPT_DIR" branch -d "$FEATURE_BRANCH" || echo "Ветка не удалена (возможно, не слита)"
     echo "Фича '${FEATURE_NAME}' завершена"
+    log_event "finish" "success" "feature=${FEATURE_NAME}"
     ;;
 
   *)
+    log_event "invoke" "error" "unknown-command=${COMMAND}"
     usage
     exit 1
     ;;
