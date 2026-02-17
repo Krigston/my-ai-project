@@ -1,0 +1,36 @@
+# Правила для AI-агента в этом проекте
+
+## Общие принципы
+- Используй Vue 3 Composition API с `<script setup>`.
+- Пиши код на TypeScript, строгая типизация обязательна.
+- Следуй архитектуре Feature-Sliced Design (FSD):
+  - `app/` - инициализация, роутинг, глобальные стили, провайдеры.
+  - `pages/` - компоненты страниц (композиция фич).
+  - `features/` - законченные функциональности.
+  - `entities/` - бизнес-сущности с минимальной логикой.
+  - `shared/` - переиспользуемые UI, composables, утилиты, API-клиент.
+- Импорты используй через алиасы: `@app`, `@features`, `@shared` и т.д.
+
+## Стилизация
+- Используй Tailwind CSS v4 через `@tailwindcss/vite`.
+- Глобальные стили - в `src/assets/main.css`.
+
+## Управление состоянием
+- Глобальное состояние - через Pinia (`src/stores` или в слоях фич/сущностей).
+- Локальное состояние компонентов - через `ref`/`reactive`.
+
+## Маршрутизация
+- Конфигурация роутов в `src/router/index.ts`.
+- Для ленивой загрузки страниц используй асинхронные импорты.
+
+## Тестирование
+- Unit-тесты рядом с кодом в `__tests__` (Vitest + Vue Test Utils).
+
+## MCP
+- Figma: `npm run mcp:figma`.
+- Браузер: `npm run mcp:browser -- screenshot <url> [output]`.
+- Сборка/тесты: `npm run mcp:build -- <lint|test:unit|build>`.
+- Git: `npm run mcp:vcs -- <command> ...`.
+
+## Режим работы
+- Перед завершением задачи запускай `npm run lint`, `npm run type-check`, `npm run build`.
