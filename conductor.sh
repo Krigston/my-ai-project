@@ -36,6 +36,23 @@ resolve_base_branch() {
   git -C "$SCRIPT_DIR" branch --show-current
 }
 
+activate_project_node() {
+  local nvm_script=""
+  if [ -n "${NVM_DIR:-}" ] && [ -s "${NVM_DIR}/nvm.sh" ]; then
+    nvm_script="${NVM_DIR}/nvm.sh"
+  elif [ -s "${HOME}/.nvm/nvm.sh" ]; then
+    nvm_script="${HOME}/.nvm/nvm.sh"
+  fi
+
+  if [ -n "$nvm_script" ]; then
+    set +u +e
+    # shellcheck disable=SC1090
+    . "$nvm_script"
+    nvm use --silent 22.13.1 >/dev/null 2>&1 || nvm use --silent 22 >/dev/null 2>&1 || true
+    set -euo pipefail
+  fi
+}
+
 require_cmd git
 require_cmd npm
 ensure_git_repo
@@ -80,6 +97,7 @@ case "$COMMAND" in
 
     (
       cd "$WORKTREE_PATH"
+      activate_project_node
       npm install
     )
 
@@ -109,6 +127,8 @@ case "$COMMAND" in
 
     (
       cd "$WORKTREE_PATH"
+      activate_project_node
+      npm install
       if [ -n "$(git status --porcelain)" ]; then
         echo "Есть незакоммиченные изменения. Сначала закоммитьте их."
         exit 1
